@@ -5,7 +5,7 @@ const {onRequest}=require("firebase-functions/v2/https");
 const admin=require("firebase-admin");
 if(!admin.apps.length)admin.initializeApp();
 const db=admin.firestore();
-const HOME="https://m-pay-landing.web.app";
+const {isSiteOrigin}=require("./hosts");
 const FIELDS=new Set(["legalName","tradeName","description","entityType","sector","repName","repRole","phone","email","county","town","location","currentMethod","device","transactions","ticket","interest"]);
 const CHECKLIST=["initial_contact","business_review","pilot_briefing","terms_acknowledgement","demo_walkthrough","readiness_review"];
 const bad=(res,status,message)=>res.status(status).json({ok:false,message});
@@ -49,7 +49,7 @@ async function identity(req,res){
 exports.pilotMerchantReadiness=onRequest({region:"us-central1",memory:"256MiB",timeoutSeconds:20,maxInstances:3,invoker:"public"},async(req,res)=>{
  res.set({"Cache-Control":"no-store, private","Referrer-Policy":"no-referrer","X-Content-Type-Options":"nosniff","Vary":"Origin"});
  if(req.method!=="POST")return bad(res,405,"POST required.");
- const origin=req.get("origin");if(origin&&origin!==HOME)return bad(res,403,"Unexpected request origin.");
+ const origin=req.get("origin");if(origin&&!isSiteOrigin(origin))return bad(res,403,"Unexpected request origin.");
  if(!req.is("application/json"))return bad(res,415,"JSON required.");
  const body=req.body;
  if(!body||typeof body!=="object"||Array.isArray(body)||Buffer.byteLength(JSON.stringify(body))>3000)return bad(res,400,"Invalid request.");

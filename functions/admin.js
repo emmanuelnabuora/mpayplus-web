@@ -5,7 +5,7 @@ const admin = require("firebase-admin");
 const {handleOperations} = require("./operations");
 if (!admin.apps.length) admin.initializeApp();
 const db = admin.firestore();
-const ORIGIN = "https://m-pay-landing.web.app";
+const {isSiteOrigin} = require("./hosts");
 const STATUSES = new Set(["new", "contacted", "screening", "waitlisted", "declined"]);
 const ROLES = new Set(["admin", "reviewer"]);
 const CHECKLIST = [
@@ -48,7 +48,7 @@ const parseBody = (req,res,max=2500) => {
 exports.pilotAdmin = onRequest({region:"us-central1",timeoutSeconds:20,memory:"256MiB",maxInstances:3,invoker:"public"},async(req,res)=>{
   res.set({"Cache-Control":"no-store, private","X-Content-Type-Options":"nosniff","Referrer-Policy":"no-referrer","Vary":"Origin"});
   const origin=req.get("Origin");
-  if(origin && origin!==ORIGIN) return fail(res,403,"Access denied.");
+  if(origin && !isSiteOrigin(origin)) return fail(res,403,"Access denied.");
   if(!["GET","PATCH","POST"].includes(req.method))return fail(res,405,"Method not allowed.");
   const tokenMatch=/^Bearer (\S+)$/.exec(req.get("Authorization")||"");
   if(!tokenMatch)return fail(res,401,"Sign in required.");

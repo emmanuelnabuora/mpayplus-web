@@ -7,6 +7,7 @@ const admin = require("firebase-admin");
 if (!admin.apps.length) admin.initializeApp();
 const db = admin.firestore();
 const turnstileSecret = defineSecret("TURNSTILE_SECRET");
+const {isSiteOrigin, isSiteHost} = require("./hosts");
 const HOME = "https://m-pay-landing.web.app";
 const TTL_MS = 72 * 60 * 60 * 1000;
 const INVITES = "pilotOnboardingInvites";
@@ -69,7 +70,7 @@ async function confirmTurnstile(token,secret,ip) {
   });
   if(!response.ok)return false;
   const result=await response.json();
-  return result.success===true && result.hostname==="m-pay-landing.web.app";
+  return result.success===true && isSiteHost(result.hostname);
 }
 async function inviteState(rawToken) {
   if(!validToken(rawToken))return null;
@@ -98,7 +99,7 @@ exports.merchantOnboarding = onRequest({region:"us-central1",timeoutSeconds:20,m
   res.set({"Cache-Control":"no-store, private","X-Content-Type-Options":"nosniff","Referrer-Policy":"no-referrer","Vary":"Origin"});
   if(req.method!=="POST")return bad(res,405,"POST required.");
   const origin=req.get("Origin");
-  if(origin && origin!==HOME)return bad(res,403,"Unexpected request origin.");
+  if(origin && !isSiteOrigin(origin))return bad(res,403,"Unexpected request origin.");
   const path=req.path.replace(/^\/api\/merchant-onboarding(?=\/|$)/,"");
   const body=parse(req,res);if(!body)return;
   try {
