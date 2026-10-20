@@ -1,0 +1,7 @@
+.on-invite-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.on-invite-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0 4px}
+.on-invite-grid p{margin:2px 0;font-weight:600}
+.on-invite-link{width:100%;font-size:13px;padding:10px;border:1px solid #c8ddce;border-radius:8px;margin-top:8px}
+.on-submission-grid{display:grid;grid-template-columns:minmax(140px,35%) 1fr;gap:9px 14px;overflow-wrap:anywhere}
+.on-submission-grid dt{color:#586d61;font-weight:700}.on-submission-grid dd{margin:0}
+@media(max-width:620px){.on-invite-grid{grid-template-columns:1fr}}

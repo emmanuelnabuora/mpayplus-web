@@ -1,0 +1,47 @@
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {getAuth,signInWithEmailAndPassword,signOut,setPersistence,inMemoryPersistence,onAuthStateChanged,getIdToken} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+const cfg=window.MPAY_FIREBASE_CONFIG;
+const $=id=>document.getElementById(id);
+const msg=(s,isError=false)=>{$("message").textContent=s;$('message').className=s?(isError?'alert':'fine'):'';};
+const app=initializeApp(cfg),auth=getAuth(app);
+let rows=[],cursor=null,role=null;
+const statuses=["new","contacted","screening","waitlisted","declined"];
+async function request(path,opts={}){
+  const user=auth.currentUser;
+  if(!user)throw Error("Sign in required.");
+  const token=await getIdToken(user);
+  const res=await fetch("/api/admin"+path,{...opts,headers:{Authorization:`Bearer ${token}`,...(opts.body?{"Content-Type":"application/json"}:{}),...opts.headers},cache:"no-store"});
+  const out=await res.json().catch(()=>({message:"Unexpected server response."}));
+  if(!res.ok)throw Error(out.message||"Request failed.");
+  return out;
+}
+function render(){
+  const query=$('search').value.trim().toLowerCase();
+  const visible=rows.filter(x=>[x.fullName,x.business,x.phone,x.city].some(v=>String(v).toLowerCase().includes(query)));
+  const tbody=$('rows');tbody.replaceChildren();
+  for(const x of visible){
+    const tr=document.createElement('tr');
+    function td(s){const el=document.createElement('td');el.textContent=s??'';tr.append(el);return el;}
+    td(x.createdAt?new Date(x.createdAt).toLocaleDateString('en-KE'):'—');
+    const b=td(x.business);const small=document.createElement('div');small.className='fine';small.textContent=x.fullName;b.append(small);
+    td(x.phone);td(x.city);td(x.category);
+    const cell=td('');const sel=document.createElement('select');sel.setAttribute('aria-label',`Status of ${x.business}`);sel.disabled=role!=='admin';
+    for(const s of statuses){const o=new Option(s,s);sel.add(o);}sel.value=x.status;
+    sel.addEventListener('change',async()=>{const previous=x.status;sel.disabled=true;try{await request(`/pilot-applications/${encodeURIComponent(x.id)}/status`,{method:'PATCH',body:JSON.stringify({status:sel.value})});x.status=sel.value;msg('Application status saved.');render();}catch(e){sel.value=previous;msg(e.message,true);}finally{sel.disabled=role!=='admin';}});
+    cell.append(sel);tbody.append(tr);
+  }
+  $('total').textContent=rows.length;$('new').textContent=rows.filter(x=>x.status==='new').length;
+  $('progress').textContent=rows.filter(x=>['contacted','screening'].includes(x.status)).length;
+  $('more').disabled=!cursor;
+}
+async function load(reset=false){
+  if(reset){rows=[];cursor=null;}
+  const response=await request('/pilot-applications'+(cursor?`?cursor=${encodeURIComponent(cursor)}`:''));
+  role=response.role;rows.push(...response.items);cursor=response.nextCursor;render();
+}
+$('signin').addEventListener('submit',async(e)=>{e.preventDefault();msg('Signing in…');try{await setPersistence(auth,inMemoryPersistence);await signInWithEmailAndPassword(auth,$('email').value,$('password').value);$('password').value='';}catch(e){msg('Sign-in failed: ' + (e.code || 'unknown error'),true);}});
+$('logout').onclick=async()=>{await signOut(auth);location.reload();};
+$('refresh').onclick=async()=>{try{await load(true);msg('Updated.');}catch(e){msg(e.message,true);}};
+$('more').onclick=async()=>{try{await load();}catch(e){msg(e.message,true);}};
+$('search').oninput=render;
+onAuthStateChanged(auth,async(user)=>{if(!user){$('login').classList.remove('hidden');$('dashboard').classList.add('hidden');$('logout').classList.add('hidden');return;}try{await load(true);$('login').classList.add('hidden');$('dashboard').classList.remove('hidden');$('logout').classList.remove('hidden');msg('');}catch(e){msg(e.message,true);await signOut(auth);}});

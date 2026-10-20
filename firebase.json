@@ -1,8 +1,72 @@
 {
   "hosting": {
     "public": "public",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "cleanUrls": true,
-    "trailingSlash": false
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "cleanUrls": false,
+    "trailingSlash": false,
+    "rewrites": [
+      {
+        "source": "/api/merchant-readiness/**",
+        "function": {
+          "functionId": "pilotMerchantReadiness",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/api/merchant-corrections/**",
+        "function": {
+          "functionId": "merchantCorrections",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/api/onboarding-review/**",
+        "function": {
+          "functionId": "pilotOnboardingReview",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/api/merchant-onboarding/**",
+        "function": {
+          "functionId": "merchantOnboarding",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/api/admin/**",
+        "function": {
+          "functionId": "pilotAdmin",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/api/pilot-signup",
+        "function": {
+          "functionId": "pilotSignup",
+          "region": "us-central1"
+        }
+      }
+    ],
+    "redirects": []
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ]
+    }
+  ],
+  "firestore": {
+    "rules": "firestore.rules"
   }
 }

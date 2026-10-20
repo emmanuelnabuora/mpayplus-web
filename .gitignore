@@ -1,0 +1,10 @@
+merchant_*_backups/
+.firebase/
+node_modules/
+.env
+.env.*
+*.log
+*service-account*.json
+*-key.json
+*.backup-*
+functions/grant-staff-role.js

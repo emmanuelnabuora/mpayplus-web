@@ -1,0 +1,29 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow,noarchive"><title>M-Pay+ | Merchant Corrections</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#15372c;background:#f1f8f3}
+*{box-sizing:border-box}body{margin:0}header{background:#073d2c;color:#fff;padding:22px 5vw;font-size:23px;font-weight:800}
+main{max-width:980px;margin:40px auto 80px;padding:0 20px}h1{font-size:clamp(31px,5vw,50px);letter-spacing:-.04em;margin:10px 0}h2{font-size:21px}p{line-height:1.6;color:#536e60}
+.card{border:1px solid #d6e7db;background:white;border-radius:20px;padding:28px;box-shadow:0 8px 35px #0a3c2a0a;margin-top:20px}
+.notice{border:1px solid #e9d8a8;color:#85540b;background:#fff8e8;padding:16px;border-radius:12px;line-height:1.5}
+.label{display:block;font-size:13px;font-weight:750;color:#214b38;margin:16px 0 6px}input,select,textarea{width:100%;border:1px solid #bcd6c5;border-radius:10px;padding:14px;font:inherit;background:#fff;color:#14372b;max-width:100%}textarea{min-height:110px}
+input[type=checkbox]{width:auto;margin-right:8px}.choice{display:flex;align-items:flex-start;gap:8px;font-size:14px;line-height:1.45;margin:15px 0}.choice input{margin-top:2px}
+button{background:#08764e;color:white;border:0;padding:16px 25px;border-radius:11px;font:inherit;font-weight:750;cursor:pointer}button:disabled{opacity:.65;cursor:not-allowed}.actions{display:flex;justify-content:flex-end;margin-top:18px}a{color:#056d48}
+.row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}@media(max-width:650px){.row{grid-template-columns:1fr}.card{padding:20px}}
+#success{background:#eaf7ee;border:1px solid #bee3ca;border-radius:12px;padding:16px;color:#135e41;font-weight:700}
+footer{padding:22px;text-align:center;font-size:12px;color:#648071}#message{margin-top:12px;white-space:pre-wrap}
+</style></head><body><header>M⁺ &nbsp; M-Pay+ | Merchant corrections</header><main>
+<p style="font-size:13px;font-weight:800;color:#058058;letter-spacing:.08em">PRIVATE MERCHANT REQUEST · CONTROLLED PILOT</p>
+<h1>Clarify your business details.</h1>
+<p>Only fields specifically flagged during administrative review may be updated. This is not a new onboarding application, identity verification, or payment activation.</p>
+<div class="notice">Use synthetic information for testing. Never include identity numbers, PINs, banking credentials, card data, or confidential documents. An invitation link alone does not verify the merchant's identity.</div>
+<div class="card"><h2>Requested corrections</h2><p id="inviteState" role="status" aria-live="polite">Validating private correction link…</p>
+<form id="form" hidden novalidate><div id="fields" class="row"></div>
+<label class="choice"><input type="checkbox" id="confirm" required> I confirm that these corrected test details are accurate and I am authorized to submit them for administrative review.</label>
+<p>Corrections will be stored separately from your original submission. They will be visible to authorized M-Pay+ administrators for review.</p>
+<div id="captcha" data-sitekey="0x4AAAAAAFXGiaHXOqNg5fhx"></div>
+<p id="message" role="alert"></p><div class="actions"><button id="submit" type="submit">Submit corrections for review</button></div></form>
+<p id="success" role="status" aria-live="polite" hidden></p></div></main>
+<footer>© 2026 Gigapp Technologies Ltd. · M-Pay+ test-only merchant corrections · No payment account activation</footer>
+<script async src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
+<script defer src="/merchant-correction.js"></script></body></html>

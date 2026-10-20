@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // No browser may access applications or rate-limit records.
+    // Server Admin SDK writes bypass these rules.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,65 @@
+"use strict";
+const {onRequest} = require("firebase-functions/v2/https");
+const admin = require("firebase-admin");
+if (!admin.apps.length) admin.initializeApp();
+const db = admin.firestore();
+const ORIGIN = "https://m-pay-landing.web.app";
+const STATUSES = new Set(["new","contacted","screening","waitlisted","declined"]);
+const ALLOWED_ROLES = new Set(["admin","reviewer"]);
+const fail = (res,status,message) => res.status(status).json({ok:false,message});
+const clean = x => typeof x === "string" ? x.trim() : "";
+
+exports.pilotAdmin = onRequest({region:"us-central1",timeoutSeconds:20,memory:"256MiB",maxInstances:3,invoker:"public"},async(req,res)=>{
+  res.set({"Cache-Control":"no-store, private","X-Content-Type-Options":"nosniff","Referrer-Policy":"no-referrer","Vary":"Origin"});
+  if(req.get("Origin") !== ORIGIN) return fail(res,403,"Access denied.");
+  if(!["GET","PATCH"].includes(req.method)) return fail(res,405,"Method not allowed.");
+  const match = /^Bearer (\S+)$/.exec(req.get("Authorization")||"");
+  if(!match) return fail(res,401,"Sign in required.");
+  let identity;
+  try {identity = await admin.auth().verifyIdToken(match[1], true);} catch {return fail(res,401,"Session expired. Sign in again.");}
+  const role = identity.mpayRole;
+  if(!ALLOWED_ROLES.has(role)) return fail(res,403,"Staff permission required.");
+  const pathname = req.path.replace(/^\/api\/admin(?=\/|$)/, "") || "/";
+  try {
+    if(req.method === "GET" && pathname === "/pilot-applications") {
+      const size = 50;
+      const cursor = clean(req.query.cursor);
+      let q = db.collection("pilotApplications").orderBy(admin.firestore.FieldPath.documentId()).limit(size+1);
+      if(cursor && /^[A-Za-z0-9_-]{1,128}$/.test(cursor)) q=q.startAfter(cursor);
+      else if(cursor) return fail(res,400,"Invalid cursor.");
+      const snap=await q.get();
+      const all=snap.docs;
+      const page=all.slice(0,size);
+      const items=page.map(doc=>{
+        const d=doc.data();
+        return {id:doc.id,fullName:d.fullName||"",business:d.business||"",phone:d.phone||"",city:d.city||"",category:d.category||"",payments:d.payments||"",status:d.status||"new",createdAt:d.createdAt?.toDate?.()?.toISOString()||null};
+      });
+      return res.json({ok:true,items,nextCursor:all.length>size?page[page.length-1].id:null,role});
+    }
+    const statusRoute=/^\/pilot-applications\/([A-Za-z0-9_-]{1,128})\/status$/.exec(pathname);
+    if(req.method==="PATCH" && statusRoute) {
+      if(role!=="admin") return fail(res,403,"Only admins may change application status.");
+      if(!req.is("application/json")) return fail(res,415,"JSON required.");
+      if(Number(req.get("Content-Length")||0)>2000) return fail(res,413,"Request too large.");
+      const status=clean(req.body?.status);
+      if(!STATUSES.has(status)) return fail(res,400,"Invalid status.");
+      const id=statusRoute[1];
+      const ref=db.collection("pilotApplications").doc(id);
+      await db.runTransaction(async tx=>{
+        const current=await tx.get(ref);
+        if(!current.exists){const err=new Error("NOT_FOUND");err.code="NOT_FOUND";throw err;}
+        const previous=current.data().status||"new";
+        if(previous===status) return;
+        const audit=db.collection("pilotAdminAudit").doc();
+        tx.update(ref,{status,updatedAt:admin.firestore.FieldValue.serverTimestamp(),updatedBy:identity.uid});
+        tx.create(audit,{applicationId:id,from:previous,to:status,actorUid:identity.uid,actorEmail:identity.email||null,at:admin.firestore.FieldValue.serverTimestamp()});
+      });
+      return res.json({ok:true,id,status});
+    }
+    return fail(res,404,"Not found.");
+  } catch(e) {
+    if(e.code==="NOT_FOUND")return fail(res,404,"Application not found.");
+    console.error("pilotAdmin failure",{code:e.code||"internal"});
+    return fail(res,503,"Temporary service error.");
+  }
+});
