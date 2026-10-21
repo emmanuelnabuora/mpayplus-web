@@ -7,6 +7,7 @@ const {defineSecret}=require("firebase-functions/params");
 const admin=require("firebase-admin");
 if(!admin.apps.length)admin.initializeApp();
 const db=admin.firestore(),turnstileSecret=defineSecret("TURNSTILE_SECRET");
+const {isSiteOrigin,isSiteHost}=require("./hosts");
 const HOME="https://m-pay-landing.web.app",TTL=72*3600*1000;
 const BASIC=Object.freeze({legalName:120,tradeName:120,description:240,repName:120,phone:20,email:160,county:50,town:100,location:160});
 const OPTIONS=Object.freeze({
@@ -92,12 +93,12 @@ async function verifyTurnstile(response,ip){
   body:new URLSearchParams({secret,response,remoteip:ip}),signal:AbortSignal.timeout(6500)
  });
  if(!result.ok)return false;
- const data=await result.json();return data.success===true&&data.hostname==="m-pay-landing.web.app";
+ const data=await result.json();return data.success===true&&isSiteHost(data.hostname);
 }
 exports.merchantCorrections=onRequest({region:"us-central1",timeoutSeconds:20,memory:"256MiB",maxInstances:3,invoker:"public",secrets:[turnstileSecret]},async(req,res)=>{
  res.set({"Cache-Control":"no-store, private","X-Content-Type-Options":"nosniff","Referrer-Policy":"no-referrer","Vary":"Origin"});
  if(req.method!=="POST")return bad(res,405,"POST required.");
- const origin=req.get("origin");if(origin&&origin!==HOME)return bad(res,403,"Unexpected request origin.");
+ const origin=req.get("origin");if(origin&&!isSiteOrigin(origin))return bad(res,403,"Unexpected request origin.");
  const route=req.path.replace(/^\/api\/merchant-corrections(?=\/|$)/,"");
  const body=readJSON(req,res);if(!body)return;
  try{

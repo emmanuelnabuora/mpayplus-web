@@ -7,7 +7,7 @@ const crypto = require("node:crypto");
 admin.initializeApp();
 const db = admin.firestore();
 const turnstileSecret = defineSecret("TURNSTILE_SECRET");
-const allowedOrigin = "https://m-pay-landing.web.app";
+const {isSiteOrigin, isSiteHost} = require("./hosts");
 const fields = ["fullName", "business", "phone", "city", "category", "payments"];
 const categories = new Set(["Retail / supermarket","Market stall","Restaurant / café","Services","Other"]);
 const methods = new Set(["Lipa na M-Pesa Till","Pochi la Biashara","M-Pesa phone number","Cash","Bank card / POS"]);
@@ -21,7 +21,7 @@ exports.pilotSignup = onRequest({
   res.set("Cache-Control","no-store");
   res.set("X-Content-Type-Options","nosniff");
   if(req.method!=="POST") return bad(res,405,"Method not allowed.");
-  if(req.get("Origin") !== allowedOrigin) return bad(res,403,"Submit from the official website.");
+  if(!isSiteOrigin(req.get("Origin"))) return bad(res,403,"Submit from the official website.");
   if(!req.is("application/json")) return bad(res,415,"JSON required.");
   if(Number(req.get("Content-Length")||0)>10000) return bad(res,413,"Request too large.");
   const body = req.body;
@@ -52,7 +52,7 @@ exports.pilotSignup = onRequest({
       return bad(res,503,"Security verification unavailable. Try again later.");
     }
     const verified=await result.json();
-    if(!verified.success || verified.hostname!=="m-pay-landing.web.app") return bad(res,403,"Security verification failed. Please retry.");
+    if(!verified.success || !isSiteHost(verified.hostname)) return bad(res,403,"Security verification failed. Please retry.");
     const phone=data.phone.replace(/\D/g, "");
     const day=new Date().toISOString().slice(0,10);
     const hashed=(key)=>crypto.createHmac("sha256",secret).update(key).digest("hex");

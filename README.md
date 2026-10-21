@@ -23,7 +23,8 @@ Includes a modified static homepage, a server-side Cloud Function (`pilotSignup`
 - Firestore rules DENY ALL client database reads/writes. Server SDK uses IAM privileges to save form submissions.
 - Restrict access to Firebase Console and service accounts. Review roles/permissions.
 - Rate limit: 5 submissions/IP/day and 2/phone/day; counters are retained unless you configure a Firestore TTL policy for `pilotRateLimits.expireAt`.
-- Public site hostname is restricted to `m-pay-landing.web.app` in `functions/index.js`. If you add a custom domain, update both the origin allowlist and Turnstile expected hostname before deployment.
+- The functions accept requests only from the hostnames listed in `functions/hosts.js`: `m-pay-landing.web.app`, `mpayplus.co.ke` and `www.mpayplus.co.ke`. The Turnstile widget in Cloudflare must list the same hostnames. To add another domain, add it in both places before deploying.
+- Invite and correction links sent to merchants still use `https://m-pay-landing.web.app` (`HOME` in `functions/onboarding.js` and `functions/corrections.js`). Switch them to `https://mpayplus.co.ke` once that domain shows Connected in Firebase Hosting.
 - This package does **not** include a staff dashboard or payment processing. Review the privacy notice with your counsel before accepting live personal data.
 - Confirm `contact@mpayplus.co.ke` is an active monitored inbox.
 - If the form doesn't submit, check Cloud Functions logs for `pilotSignup` and Turnstile hostname/site key/secret alignment.
