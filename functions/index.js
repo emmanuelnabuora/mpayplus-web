@@ -70,7 +70,7 @@ exports.pilotSignup = onRequest({
       tx.set(phoneRef,{count:(phoneSnap.data()?.count||0)+1,expireAt},{merge:true});
       tx.create(appRef,{...data,phoneNormalized:phone,consent:true,consentTextVersion:"2026-10-12",status:"new",source:"landing-page",createdAt:admin.firestore.FieldValue.serverTimestamp()});
     });
-    return res.status(201).json({ok:true,message:"Thank you. Your pilot interest has been received."});
+    return res.status(201).json({ok:true,message:"Thank you. Your application has been received, and our team will contact you."});
   } catch(err) {
     if(err.code==="RATE_LIMIT") return bad(res,429,err.message);
     console.error("Pilot signup error",{code:err.code||"internal"});
